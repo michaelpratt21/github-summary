@@ -1,0 +1,53 @@
+# GitHub Merge Summary Configuration
+# Copy this file to team_changes_config.yaml and customize
+
+# Repositories to monitor (list of owner/repo)
+repos:
+  - shop/world
+  # - Shopify/shopify
+  # - shop/issues-fulfillment
+
+# Filter by labels (optional)
+# PRs with ANY of these labels will be included
+labels:
+  - Slice: delivery
+  # - Component: Delivery
+  # - bug
+
+# Filter by GitHub usernames (optional)
+# PRs authored by ANY of these users will be included
+usernames: []
+  # - alice
+  # - bob
+
+# Time range to look back
+# Format: <number><unit> where unit is 'h' (hours) or 'd' (days)
+# Examples: 24h, 48h, 7d
+time_range: 24h
+
+# Output destinations (all optional)
+# Note: stdout is always enabled by default
+
+# Slack webhook URLs (optional, can specify multiple)
+slack_urls: []
+  # - https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+  # - https://hooks.slack.com/services/ANOTHER/WEBHOOK/URL
+
+# Email addresses (optional, can specify multiple)
+# Note: Email functionality is not yet fully implemented
+email_addresses: []
+  # - team@example.com
+  # - manager@example.com
+
+# Output file paths (optional, can specify multiple)
+output_files: []
+  # - /path/to/report.md
+  # - /tmp/daily_summary.md
+
+# Anthropic API key for Claude (required)
+# At Shopify, use your Shopify AI proxy token
+# Set via OPENAI_API_KEY environment variable (recommended)
+anthropic_api_key: null  # Will use OPENAI_API_KEY env var if not set
+
+# Anthropic API base URL (for Shopify proxy)
+anthropic_base_url: https://proxy.shopify.ai
