@@ -23,12 +23,8 @@ gh auth login
 ```bash
 cd github-summary
 
-# Create and activate virtual environment
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+# Run setup script (creates venv and installs all dependencies)
+./setup.sh
 ```
 
 ## Step 3: Set Environment Variables
@@ -49,8 +45,7 @@ export SMTP_FROM="your.email@company.com"
 
 ```bash
 # Generate a summary and save to file
-python team_changes_summary.py \
-  --repos "shop/world" \
+./run.sh --repos "shop/world" \
   --time-range 24h \
   --file my-first-summary.md
 
@@ -61,8 +56,7 @@ cat my-first-summary.md
 ## Step 5: Try Email Output
 
 ```bash
-python team_changes_summary.py \
-  --repos "shop/world" \
+./run.sh --repos "shop/world" \
   --time-range 24h \
   --email your.email@company.com
 ```
@@ -73,8 +67,7 @@ Check your inbox for a beautifully formatted HTML email!
 
 ### Filter by Labels
 ```bash
-python team_changes_summary.py \
-  --repos "shop/world" \
+./run.sh --repos "shop/world" \
   --labels "bug,feature,Slice: delivery" \
   --time-range 7d \
   --email team@example.com
@@ -82,8 +75,7 @@ python team_changes_summary.py \
 
 ### Track Specific Contributors
 ```bash
-python team_changes_summary.py \
-  --repos "org/repo" \
+./run.sh --repos "org/repo" \
   --usernames "alice,bob" \
   --time-range 48h \
   --file team-report.md
@@ -98,7 +90,7 @@ cp team_changes_config.yaml.example team_changes_config.yaml
 nano team_changes_config.yaml
 
 # Run with config
-python team_changes_summary.py --config team_changes_config.yaml
+./run.sh --config team_changes_config.yaml
 ```
 
 ### Automate with Cron

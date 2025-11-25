@@ -19,12 +19,8 @@ AI-powered tool that generates human-readable summaries of merged GitHub PRs usi
 git clone <your-repo-url>
 cd github-summary
 
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+# Run setup script (creates venv and installs dependencies)
+./setup.sh
 ```
 
 ### 2. Configure Environment Variables
@@ -45,15 +41,13 @@ See [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md) for detailed email setup instruct
 
 ```bash
 # Generate summary and send via email
-python team_changes_summary.py \
-  --repos "owner/repo" \
+./run.sh --repos "owner/repo" \
   --labels "bug,feature" \
   --time-range 24h \
   --email you@example.com
 
 # Save to file instead
-python team_changes_summary.py \
-  --repos "owner/repo" \
+./run.sh --repos "owner/repo" \
   --time-range 7d \
   --file weekly-summary.md
 ```
@@ -63,7 +57,7 @@ python team_changes_summary.py \
 ### Command Line
 
 ```bash
-python team_changes_summary.py [OPTIONS]
+./run.sh [OPTIONS]
 
 Options:
   --repos REPOS              Comma-separated list of repositories (owner/repo)
@@ -90,15 +84,14 @@ cp team_changes_config.yaml.example team_changes_config.yaml
 Then run:
 
 ```bash
-python team_changes_summary.py --config team_changes_config.yaml
+./run.sh --config team_changes_config.yaml
 ```
 
 ### Examples
 
 **Daily team summary:**
 ```bash
-python team_changes_summary.py \
-  --repos "shop/world" \
+./run.sh --repos "shop/world" \
   --labels "Slice: delivery,Slice: fulfillment" \
   --time-range 24h \
   --email team@example.com
@@ -106,8 +99,7 @@ python team_changes_summary.py \
 
 **Weekly report with multiple outputs:**
 ```bash
-python team_changes_summary.py \
-  --repos "org/repo1,org/repo2" \
+./run.sh --repos "org/repo1,org/repo2" \
   --time-range 7d \
   --email manager@example.com \
   --email team@example.com \
@@ -117,8 +109,7 @@ python team_changes_summary.py \
 
 **Track specific contributors:**
 ```bash
-python team_changes_summary.py \
-  --repos "org/repo" \
+./run.sh --repos "org/repo" \
   --usernames "alice,bob,charlie" \
   --time-range 48h \
   --file contributors-report.md
@@ -134,10 +125,10 @@ crontab -e
 
 # Add entries (see examples/crontab.example for full setup)
 # Monday at 6am - 72h report (covers weekend)
-0 6 * * 1 cd /path/to/github-summary && venv/bin/python team_changes_summary.py --config team_changes_config.yaml
+0 6 * * 1 cd /path/to/github-summary && ./run.sh --config team_changes_config.yaml
 
 # Tuesday-Friday at 6am - 24h report
-0 6 * * 2-5 cd /path/to/github-summary && venv/bin/python team_changes_summary.py --config team_changes_config.yaml
+0 6 * * 2-5 cd /path/to/github-summary && ./run.sh --config team_changes_config.yaml
 ```
 
 See [examples/crontab.example](examples/crontab.example) for complete cron setup.
@@ -166,6 +157,9 @@ See [examples/crontab.example](examples/crontab.example) for complete cron setup
 ```
 github-summary/
 ├── README.md                        # This file
+├── QUICKSTART.md                    # 5-minute quick start guide
+├── setup.sh                         # Setup script (creates venv, installs deps)
+├── run.sh                           # Run script (activates venv automatically)
 ├── requirements.txt                 # Python dependencies
 ├── team_changes_summary.py          # Main script
 ├── team_changes_config.yaml.example # Example configuration

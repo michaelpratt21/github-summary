@@ -35,10 +35,10 @@ SMTP_FROM=your.email@company.com
 # ============================================================================
 
 # Monday at 6am - 72 hour report (covers weekend)
-0 6 * * 1 cd /Users/michaelpratt/github/github-summary && venv/bin/python team_changes_summary.py --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 72h --email your.email@company.com >> /tmp/github_summary_monday.log 2>&1
+0 6 * * 1 cd /Users/michaelpratt/github/github-summary && ./run.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 72h --email your.email@company.com >> /tmp/github_summary_monday.log 2>&1
 
 # Tuesday-Friday at 6am - 24 hour report
-0 6 * * 2-5 cd /Users/michaelpratt/github/github-summary && venv/bin/python team_changes_summary.py --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 24h --email your.email@company.com >> /tmp/github_summary_daily.log 2>&1
+0 6 * * 2-5 cd /Users/michaelpratt/github/github-summary && ./run.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 24h --email your.email@company.com >> /tmp/github_summary_daily.log 2>&1
 
 # ============================================================================
 # ALTERNATIVE: Using a config file
@@ -50,10 +50,10 @@ SMTP_FROM=your.email@company.com
 # 3. Use these cron entries instead:
 
 # Monday at 6am - edit config to use 72h
-# 0 6 * * 1 cd /Users/michaelpratt/github/github-summary && venv/bin/python team_changes_summary.py --config team_changes_config_monday.yaml >> /tmp/github_summary_monday.log 2>&1
+# 0 6 * * 1 cd /Users/michaelpratt/github/github-summary && ./run.sh --config team_changes_config_monday.yaml >> /tmp/github_summary_monday.log 2>&1
 
 # Tuesday-Friday at 6am - edit config to use 24h
-# 0 6 * * 2-5 cd /Users/michaelpratt/github/github-summary && venv/bin/python team_changes_summary.py --config team_changes_config_daily.yaml >> /tmp/github_summary_daily.log 2>&1
+# 0 6 * * 2-5 cd /Users/michaelpratt/github/github-summary && ./run.sh --config team_changes_config_daily.yaml >> /tmp/github_summary_daily.log 2>&1
 
 # ============================================================================
 # CRON SCHEDULE FORMAT
@@ -83,8 +83,7 @@ SMTP_FROM=your.email@company.com
 #
 # 2. Test command manually first:
 #    cd /Users/michaelpratt/github/github-summary
-#    source venv/bin/activate
-#    python team_changes_summary.py --repos "shop/world" --time-range 24h --email test@example.com
+#    ./run.sh --repos "shop/world" --time-range 24h --email test@example.com
 #
 # 3. Verify cron job is installed:
 #    crontab -l
