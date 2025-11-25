@@ -8,7 +8,6 @@ AI-powered tool that generates human-readable summaries of merged GitHub PRs usi
 - 📊 **Flexible Filtering**: Filter by labels, usernames, repositories, and time ranges
 - 📧 **Multiple Output Options**: Send via email (HTML formatted), Slack, or save to files
 - ⚡ **High-Volume Support**: Handles repositories with 700+ PRs/day
-- 🎨 **Beautiful HTML Emails**: GitHub-styled formatting optimized for email clients
 - ⏰ **Automation Ready**: Easy to schedule with cron jobs
 
 ## Quick Start
@@ -28,8 +27,9 @@ cd github-summary
 ```bash
 # Anthropic API key (required)
 export OPENAI_API_KEY="your-shopify-ai-proxy-token"
+export OPENAI_API_BASE=https://proxy.shopify.ai/v1
 
-# Email settings (required if using --email)
+# Email settings (required if using --email for output)
 export SMTP_USER="your.email@company.com"
 export SMTP_PASSWORD="your-app-password"
 export SMTP_FROM="your.email@company.com"
@@ -41,15 +41,16 @@ See [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md) for detailed email setup instruct
 
 ```bash
 # Generate summary and send via email
-./run.sh --repos "owner/repo" \
-  --labels "bug,feature" \
+./run.sh --repos "shop/world" \
+  --labels "Slice: delivery, Slice: fulfillment" \
   --time-range 24h \
-  --email you@example.com
+  --email joe.developer@shopify.com
 
 # Save to file instead
-./run.sh --repos "owner/repo" \
-  --time-range 7d \
-  --file weekly-summary.md
+./run.sh --repos "shop/world" \
+  --labels "Slice: delivery, Slice: fulfillment" \
+  --time-range 24h \
+  --file /tmp/weekly-summary.md
 ```
 
 ## Usage
@@ -61,7 +62,7 @@ See [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md) for detailed email setup instruct
 
 Options:
   --repos REPOS              Comma-separated list of repositories (owner/repo)
-  --labels LABELS            Comma-separated list of labels to filter
+  --labels LABELS            Comma-separated list of GitHub labels to filter
   --usernames USERNAMES      Comma-separated list of GitHub usernames to filter
   --time-range RANGE         Time range to look back (e.g., 24h, 7d)
   --email EMAIL              Email address to send summary (can be repeated)
