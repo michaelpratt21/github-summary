@@ -1,10 +1,10 @@
 #!/bin/bash
-# Setup script for GitHub Merge Summary
+# Setup script for GitHub Summary
 # This creates a virtual environment and installs all dependencies
 
 set -e  # Exit on error
 
-echo "🚀 Setting up GitHub Merge Summary..."
+echo "🚀 Setting up GitHub Summary..."
 echo ""
 
 # Check Python version

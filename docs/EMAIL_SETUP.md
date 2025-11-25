@@ -32,7 +32,7 @@ Three methods to send email reports, in order of easiest to hardest:
    ```bash
    export OPENAI_API_KEY="your-key"
 
-   scripts/venv/bin/python3 scripts/team_changes_summary.py \
+   scripts/venv/bin/python3 scripts/github_summary.py \
      --repos "shop/world" \
      --labels "Slice: delivery" \
      --time-range 6h \
@@ -69,7 +69,7 @@ export SMTP_FROM="noreply@shopify.com"  # Or your team email
 
 ### Test It:
 ```bash
-scripts/venv/bin/python3 scripts/team_changes_summary.py \
+scripts/venv/bin/python3 scripts/github_summary.py \
   --repos "shop/world" \
   --labels "Slice: delivery" \
   --time-range 6h \
@@ -113,7 +113,7 @@ This uses SMTP but with OAuth tokens instead of passwords.
 
 3. **First Run** (opens browser for authentication)
    ```bash
-   scripts/venv/bin/python3 scripts/team_changes_summary.py \
+   scripts/venv/bin/python3 scripts/github_summary.py \
      --repos "shop/world" \
      --labels "Slice: delivery" \
      --time-range 6h \

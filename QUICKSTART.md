@@ -84,13 +84,13 @@ Check your inbox for a beautifully formatted HTML email!
 ### Use a Config File
 ```bash
 # Copy example config
-cp team_changes_config.yaml.example team_changes_config.yaml
+cp github_summary_config.yaml.example github_summary_config.yaml
 
 # Edit with your preferences
-nano team_changes_config.yaml
+nano github_summary_config.yaml
 
 # Run with config
-./run.sh --config team_changes_config.yaml
+./run.sh --config github_summary_config.yaml
 ```
 
 ### Automate with Cron

@@ -1,4 +1,4 @@
-# GitHub Merge Summary
+# GitHub Summary
 
 AI-powered tool that generates human-readable summaries of merged GitHub PRs using Claude. Perfect for daily/weekly team updates, keeping stakeholders informed, or tracking project progress.
 
@@ -78,14 +78,14 @@ Options:
 For repeated use, create a config file:
 
 ```bash
-cp team_changes_config.yaml.example team_changes_config.yaml
+cp github_summary_config.yaml.example github_summary_config.yaml
 # Edit with your settings
 ```
 
 Then run:
 
 ```bash
-./run.sh --config team_changes_config.yaml
+./run.sh --config github_summary_config.yaml
 ```
 
 ### Examples
@@ -126,10 +126,10 @@ crontab -e
 
 # Add entries (see examples/crontab.example for full setup)
 # Monday at 6am - 72h report (covers weekend)
-0 6 * * 1 cd /path/to/github-summary && ./run.sh --config team_changes_config.yaml
+0 6 * * 1 cd /path/to/github-summary && ./run.sh --config github_summary_config.yaml
 
 # Tuesday-Friday at 6am - 24h report
-0 6 * * 2-5 cd /path/to/github-summary && ./run.sh --config team_changes_config.yaml
+0 6 * * 2-5 cd /path/to/github-summary && ./run.sh --config github_summary_config.yaml
 ```
 
 See [examples/crontab.example](examples/crontab.example) for complete cron setup.
@@ -162,8 +162,8 @@ github-summary/
 ├── setup.sh                         # Setup script (creates venv, installs deps)
 ├── run.sh                           # Run script (activates venv automatically)
 ├── requirements.txt                 # Python dependencies
-├── team_changes_summary.py          # Main script
-├── team_changes_config.yaml.example # Example configuration
+├── github_summary.py                # Main script
+├── github_summary_config.yaml.example # Example configuration
 ├── docs/
 │   └── EMAIL_SETUP.md              # Email setup guide
 └── examples/

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Convenience script to run GitHub Merge Summary
+# Convenience script to run GitHub Summary
 # Automatically activates virtual environment and runs the script
 
 set -e  # Exit on error
@@ -13,4 +13,4 @@ fi
 
 # Activate venv and run script with all arguments
 source venv/bin/activate
-python team_changes_summary.py "$@"
+python github_summary.py "$@"

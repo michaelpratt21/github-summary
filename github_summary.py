@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GitHub Merge Summary Generator
+GitHub Summary Generator
 
 Generates human-readable summaries of merged PRs with AI-powered analysis.
 Supports multiple output destinations: files, Slack, and email.
@@ -10,20 +10,20 @@ Note: At least one output destination (--file, --slack, or --email) is required.
 
 Usage:
     # Output to file
-    python scripts/team_changes_summary.py --repos shop/world --time-range 7d --file report.md
+    python github_summary.py --repos shop/world --time-range 7d --file report.md
 
     # Send via email
-    python scripts/team_changes_summary.py --repos shop/world --labels "Slice: delivery" --time-range 24h \
+    python github_summary.py --repos shop/world --labels "Slice: delivery" --time-range 24h \
         --email user@example.com
 
     # Output to multiple destinations
-    python scripts/team_changes_summary.py --repos shop/world --time-range 24h \
+    python github_summary.py --repos shop/world --time-range 24h \
         --file report.md \
         --slack https://hooks.slack.com/services/YOUR/WEBHOOK/URL \
         --email user@example.com
 
     # Using config file
-    python scripts/team_changes_summary.py --config scripts/team_changes_config.yaml
+    python github_summary.py --config github_summary_config.yaml
 """
 
 import argparse
@@ -88,7 +88,7 @@ KNOWN_BOTS = [
 ]
 
 
-class TeamChangesSummary:
+class GitHubSummary:
     def __init__(self, config: Dict[str, Any]):
         self.repos = config.get('repos', [])
         self.labels = config.get('labels', [])
@@ -448,7 +448,7 @@ If no related resources found, write "None found in PR description"
 
         usernames_text = ', '.join(self.usernames) if self.usernames else 'None'
 
-        report = f"""# GitHub Merge Summary
+        report = f"""# GitHub Summary
 
 **Total PRs:** {len(summaries)}
 
@@ -603,7 +603,7 @@ If no related resources found, write "None found in PR description"
 
         usernames_text = ', '.join(self.usernames) if self.usernames else 'None'
 
-        return f"""# GitHub Merge Summary
+        return f"""# GitHub Summary
 
 **Total PRs:** 0
 
@@ -982,7 +982,7 @@ No merged pull requests found matching the specified criteria.
             msg = MIMEMultipart('alternative')
             msg['From'] = smtp_from
             msg['To'] = email_address
-            msg['Subject'] = f'GitHub Merge Summary - {datetime.now(timezone.utc).strftime("%Y-%m-%d")}'
+            msg['Subject'] = f'GitHub Summary - {datetime.now(timezone.utc).strftime("%Y-%m-%d")}'
 
             # Attach both plain text and HTML versions
             msg.attach(MIMETextEmail(report, 'plain', 'utf-8'))
@@ -1045,7 +1045,7 @@ No merged pull requests found matching the specified criteria.
             msg = MIMEMultipart()
             msg['From'] = smtp_from or creds.client_id
             msg['To'] = email_address
-            msg['Subject'] = f'GitHub Merge Summary - {datetime.now(timezone.utc).strftime("%Y-%m-%d")}'
+            msg['Subject'] = f'GitHub Summary - {datetime.now(timezone.utc).strftime("%Y-%m-%d")}'
             msg.attach(MIMEText(report, 'plain', 'utf-8'))
 
             with smtplib.SMTP('smtp.gmail.com', 587) as server:
@@ -1090,7 +1090,7 @@ No merged pull requests found matching the specified criteria.
             # Create email message
             message = MIMEText(report, 'plain', 'utf-8')
             message['To'] = email_address
-            message['Subject'] = f'GitHub Merge Summary - {datetime.now(timezone.utc).strftime("%Y-%m-%d")}'
+            message['Subject'] = f'GitHub Summary - {datetime.now(timezone.utc).strftime("%Y-%m-%d")}'
 
             # Encode the message
             raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
@@ -1214,7 +1214,7 @@ def main():
         sys.exit(1)
 
     try:
-        summary_generator = TeamChangesSummary(config)
+        summary_generator = GitHubSummary(config)
         summary_generator.run()
     except Exception as e:
         logger.error(f"Failed to generate summary: {e}")
