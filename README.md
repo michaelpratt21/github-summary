@@ -15,7 +15,7 @@ AI-powered tool that generates human-readable summaries of merged GitHub PRs usi
 ### 1. Clone and Setup
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/michaelpratt21/github-summary
 cd github-summary
 
 # Run setup script (creates venv and installs dependencies)
@@ -25,9 +25,8 @@ cd github-summary
 ### 2. Configure Environment Variables
 
 ```bash
-# Anthropic API key (required)
+# Anthropic API key (required; found on https://openai-proxy.shopify.io/dashboard/access)
 export OPENAI_API_KEY="your-shopify-ai-proxy-token"
-export OPENAI_API_BASE=https://proxy.shopify.ai/v1
 
 # Email settings (required if using --email for output)
 export SMTP_USER="your.email@company.com"
@@ -37,23 +36,7 @@ export SMTP_FROM="your.email@company.com"
 
 See [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md) for detailed email setup instructions.
 
-### 3. Run Your First Summary
-
-```bash
-# Generate summary and send via email
-./run.sh --repos "shop/world" \
-  --labels "Slice: delivery, Slice: fulfillment" \
-  --time-range 24h \
-  --email joe.developer@shopify.com
-
-# Save to file instead
-./run.sh --repos "shop/world" \
-  --labels "Slice: delivery, Slice: fulfillment" \
-  --time-range 24h \
-  --file /tmp/weekly-summary.md
-```
-
-## Usage
+### 3. Usage
 
 ### Command Line
 
