@@ -5,6 +5,7 @@ ENV/
 
 # Config files with credentials
 github_summary_config.yaml
+github_summary_config_3d.yaml
 gmail_token.json
 gmail_credentials.json
 client_secret*.json

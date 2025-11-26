@@ -13,22 +13,19 @@
 # ============================================================================
 # ENVIRONMENT VARIABLES
 # ============================================================================
-# Set these at the top of your crontab so they're available to all jobs
+# IMPORTANT: Environment variables in cron must be set WITHOUT spaces around =
+# and complex values should be quoted. Example format shown below.
 
 SHELL=/bin/bash
 PATH=/usr/local/bin:/usr/bin:/bin
-
-# Anthropic API key (required)
-OPENAI_API_KEY=shopify-your-api-key-here
-
-# SMTP credentials for email (required if using --email)
-SMTP_USER=your.email@company.com
-SMTP_PASSWORD=your-app-password-here
-SMTP_FROM=your.email@company.com
+OPENAI_API_KEY="shopify-your-api-key-here"
+SMTP_USER="your.email@company.com"
+SMTP_PASSWORD="your-app-password-here"
+SMTP_FROM="your.email@company.com"
 
 # Optional: Customize SMTP server (defaults to Gmail)
-# SMTP_HOST=smtp.gmail.com
-# SMTP_PORT=587
+# SMTP_HOST="smtp.gmail.com"
+# SMTP_PORT="587"
 
 # ============================================================================
 # SCHEDULED JOBS
