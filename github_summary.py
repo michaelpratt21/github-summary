@@ -33,6 +33,7 @@ import logging
 import os
 import subprocess
 import sys
+import traceback
 from datetime import datetime, timedelta, timezone
 from email.mime.text import MIMEText
 from typing import Any, Dict, List, Optional
@@ -101,7 +102,8 @@ class GitHubSummary:
         self.output_files = config.get('output_files', [])
 
         # Read API key from OPENAI_API_KEY for Shopify proxy compatibility
-        self.anthropic_api_key = config.get('anthropic_api_key', os.getenv('OPENAI_API_KEY'))
+        # Use environment variable if config value is None or not set
+        self.anthropic_api_key = config.get('anthropic_api_key') or os.getenv('OPENAI_API_KEY')
 
         if not self.anthropic_api_key:
             raise ValueError("Anthropic API key not configured (set OPENAI_API_KEY env var or in config)")
@@ -142,14 +144,31 @@ class GitHubSummary:
         summaries = []
         for pr in all_prs:
             logger.info(f"Analyzing PR #{pr['number']} in {pr['repository']}")
-            summary = self._generate_pr_summary(pr)
-            summaries.append(summary)
+            try:
+                summary = self._generate_pr_summary(pr)
+                summaries.append(summary)
+            except Exception as e:
+                logger.error(f"Failed to generate summary for PR #{pr.get('number', 'unknown')}: {e}")
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                logger.info("Continuing with next PR...")
+                continue
+
+        # Check if we got any summaries
+        if not summaries:
+            logger.warning("No PR summaries were generated successfully")
+            report = self._format_empty_report(start_time, end_time)
+            self._output_report(report)
+            return
 
         # Format and output report
         report = self._format_report(summaries, start_time, end_time)
         self._output_report(report)
 
-        logger.info("Summary generation complete")
+        failed_count = len(all_prs) - len(summaries)
+        if failed_count > 0:
+            logger.warning(f"Summary generation complete. {len(summaries)} successful, {failed_count} failed")
+        else:
+            logger.info("Summary generation complete")
 
     def _parse_time_range(self, time_range: str) -> datetime:
         """Convert time range string (e.g., '24h', '7d') to datetime."""
@@ -307,35 +326,44 @@ class GitHubSummary:
 
     def _generate_pr_summary(self, pr: Dict[str, Any]) -> Dict[str, Any]:
         """Generate contextual summary using Claude API."""
-        repo = pr['repository']
-        pr_number = pr['number']
+        try:
+            repo = pr['repository']
+            pr_number = pr['number']
 
-        # Fetch detailed PR info
-        details = self._fetch_pr_details(repo, pr_number)
+            # Fetch detailed PR info
+            details = self._fetch_pr_details(repo, pr_number)
 
-        # Extract relevant information
-        title = pr.get('title', 'Untitled')
-        body = pr.get('body', '')
-        author_login = pr.get('author', {}).get('login', 'unknown')
-        url = pr.get('url', '')
-        merged_at = pr.get('mergedAt', '')
-        created_at = pr.get('createdAt', '')
+            # Extract relevant information
+            title = pr.get('title', 'Untitled')
+            body = pr.get('body', '')
+            author = pr.get('author')
+            author_login = author.get('login', 'unknown') if author else 'unknown'
+            url = pr.get('url', '')
+            merged_at = pr.get('mergedAt', '')
+            created_at = pr.get('createdAt', '')
+        except Exception as e:
+            logger.error(f"Failed to extract PR info for #{pr.get('number', 'unknown')}: {e}")
+            raise
 
-        files = details.get('files', [])
-        reviews = details.get('reviews', [])
-        comments = details.get('comments', [])
+        # Ensure we have lists even if API returns None
+        files = details.get('files') or []
+        reviews = details.get('reviews') or []
+        comments = details.get('comments') or []
 
         # Get reviewers (people who approved, excluding bots)
         reviewer_logins = [
-            r['author']['login']
+            r.get('author', {}).get('login', '')
             for r in reviews
-            if r.get('state') == 'APPROVED' and r.get('author', {}).get('login', '') not in KNOWN_BOTS
+            if r.get('state') == 'APPROVED' and r.get('author', {}).get('login', '') not in KNOWN_BOTS and r.get('author')
         ]
 
         # Get commenters (exclude bots, author, and duplicates)
         commenter_logins = set()
         for comment in comments:
-            login = comment.get('author', {}).get('login', '')
+            author = comment.get('author')
+            if not author:
+                continue
+            login = author.get('login', '')
             if login and login not in KNOWN_BOTS and not login.endswith('[bot]') and login != author_login:
                 commenter_logins.add(login)
 
