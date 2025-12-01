@@ -9,10 +9,11 @@ repos:
 
 # Filter by labels (optional)
 # PRs with ANY of these labels will be included
+# IMPORTANT: Use quotes around labels that contain colons
 labels:
-  - Slice: delivery
-  # - Component: Delivery
-  # - bug
+  - "Slice: delivery"
+  # - "Component: Delivery"
+  # - "bug"
 
 # Filter by GitHub usernames (optional)
 # PRs authored by ANY of these users will be included

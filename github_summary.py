@@ -96,6 +96,15 @@ class GitHubSummary:
         self.usernames = config.get('usernames', [])
         self.time_range = config.get('time_range', '24h')
 
+        # Validate labels are strings (common YAML config error)
+        if self.labels and any(not isinstance(label, str) for label in self.labels):
+            raise ValueError(
+                "Labels must be strings. Check your config file - labels with colons must be quoted.\n"
+                "Example: labels:\n"
+                '  - "Slice: delivery"\n'
+                '  - "Component: Fulfillment"'
+            )
+
         # Output destinations (can have 0 or more of each)
         self.slack_urls = config.get('slack_urls', [])
         self.email_addresses = config.get('email_addresses', [])
@@ -409,6 +418,35 @@ class GitHubSummary:
         if len(files) > 20:
             file_list += f"\n... and {len(files) - 20} more files"
 
+        num_files = len(files)
+
+        # Dynamic summary instructions based on PR size
+        if num_files <= 2:
+            # Small PR: just 2-3 sentences
+            summary_instructions = """Write a concise 2-3 sentence summary that covers:
+- What changed and why
+- Any notable impact or considerations"""
+        elif num_files <= 10:
+            # Medium PR: 1 paragraph
+            summary_instructions = """Write a single paragraph (4-5 sentences) covering:
+- What problem was being solved or feature was needed
+- What changes were made and which components were modified
+- Who is affected and any notable considerations"""
+        else:
+            # Large PR: 2 paragraphs
+            summary_instructions = """Write a 2-paragraph summary:
+
+**Paragraph 1 (4-5 sentences):**
+- What problem was being solved or what feature was needed?
+- What was the state of things before this change?
+- Include any relevant context from the PR description
+
+**Paragraph 2 (4-5 sentences):**
+- What changes were made to address this?
+- Which components or files were modified?
+- Who is affected by this change (merchants, customers, internal systems)?
+- Any notable side effects or follow-up work?"""
+
         return f"""Generate a human-readable summary of this pull request. The summary should be understandable by someone unfamiliar with this area of the codebase.
 
 **PR Title:** {title}
@@ -416,29 +454,14 @@ class GitHubSummary:
 **PR Description:**
 {body or 'No description provided'}
 
-**Changed Files:**
+**Changed Files ({num_files} files):**
 {file_list}
 
 **Repository:** {repo}
 
 ---
 
-Write a 3-paragraph summary (each paragraph 3-5 sentences):
-
-**Paragraph 1: Problem/Motivation**
-- What problem was being solved or what feature was needed?
-- What was the state of things before this change?
-- Include any relevant context from the PR description
-
-**Paragraph 2: Solution**
-- What changes were made to address this?
-- Which components or files were modified?
-- What's the new behavior?
-
-**Paragraph 3: Impact**
-- Who is affected by this change? (merchants, customers, internal systems)
-- Are there any notable side effects or considerations?
-- Any follow-up work mentioned?
+{summary_instructions}
 
 Also, extract any links to:
 - Vault projects (vault.shopify.io)
@@ -448,11 +471,7 @@ Format your response as:
 
 ## Summary
 
-[Paragraph 1]
-
-[Paragraph 2]
-
-[Paragraph 3]
+[Your summary here]
 
 ## Related Resources
 
