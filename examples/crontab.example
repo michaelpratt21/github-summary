@@ -13,29 +13,28 @@
 # ============================================================================
 # ENVIRONMENT VARIABLES
 # ============================================================================
-# IMPORTANT: Environment variables in cron must be set WITHOUT spaces around =
-# and complex values should be quoted. Example format shown below.
+# IMPORTANT: Instead of setting environment variables here, add them to your
+# ~/.zshrc file (or ~/.bashrc if using bash). The cron_wrapper.sh script will
+# automatically source your shell profile to pick up all environment variables.
+#
+# Add to your ~/.zshrc:
+#   export GITHUB_TOKEN="your-github-token-here"  # Get with: gh auth token
+#   export OPENAI_API_KEY="shopify-your-api-key-here"
+#   export SMTP_USER="your.email@company.com"
+#   export SMTP_PASSWORD="your-app-password-here"
+#   export SMTP_FROM="your.email@company.com"
 
 SHELL=/bin/bash
-PATH=/usr/local/bin:/usr/bin:/bin
-OPENAI_API_KEY="shopify-your-api-key-here"
-SMTP_USER="your.email@company.com"
-SMTP_PASSWORD="your-app-password-here"
-SMTP_FROM="your.email@company.com"
-
-# Optional: Customize SMTP server (defaults to Gmail)
-# SMTP_HOST="smtp.gmail.com"
-# SMTP_PORT="587"
 
 # ============================================================================
 # SCHEDULED JOBS
 # ============================================================================
 
 # Monday at 6am - 72 hour report (covers weekend)
-0 6 * * 1 cd /Users/michaelpratt/github/github-summary && ./run.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 72h --email your.email@company.com >> /tmp/github_summary_monday.log 2>&1
+0 6 * * 1 /Users/michaelpratt/github/github-summary/cron_wrapper.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 72h --email your.email@company.com >> /tmp/github_summary_monday.log 2>&1
 
 # Tuesday-Friday at 6am - 24 hour report
-0 6 * * 2-5 cd /Users/michaelpratt/github/github-summary && ./run.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 24h --email your.email@company.com >> /tmp/github_summary_daily.log 2>&1
+0 6 * * 2-5 /Users/michaelpratt/github/github-summary/cron_wrapper.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 24h --email your.email@company.com >> /tmp/github_summary_daily.log 2>&1
 
 # ============================================================================
 # ALTERNATIVE: Using a config file
@@ -47,10 +46,10 @@ SMTP_FROM="your.email@company.com"
 # 3. Use these cron entries instead:
 
 # Monday at 6am - edit config to use 72h
-# 0 6 * * 1 cd /Users/michaelpratt/github/github-summary && ./run.sh --config github_summary_config_monday.yaml >> /tmp/github_summary_monday.log 2>&1
+# 0 6 * * 1 /Users/michaelpratt/github/github-summary/cron_wrapper.sh --config github_summary_config_monday.yaml >> /tmp/github_summary_monday.log 2>&1
 
 # Tuesday-Friday at 6am - edit config to use 24h
-# 0 6 * * 2-5 cd /Users/michaelpratt/github/github-summary && ./run.sh --config github_summary_config_daily.yaml >> /tmp/github_summary_daily.log 2>&1
+# 0 6 * * 2-5 /Users/michaelpratt/github/github-summary/cron_wrapper.sh --config github_summary_config_daily.yaml >> /tmp/github_summary_daily.log 2>&1
 
 # ============================================================================
 # CRON SCHEDULE FORMAT
@@ -79,8 +78,7 @@ SMTP_FROM="your.email@company.com"
 #    tail -f /tmp/github_summary_monday.log
 #
 # 2. Test command manually first:
-#    cd /Users/michaelpratt/github/github-summary
-#    ./run.sh --repos "shop/world" --time-range 24h --email test@example.com
+#    /Users/michaelpratt/github/github-summary/cron_wrapper.sh --repos "shop/world" --time-range 24h --email test@example.com
 #
 # 3. Verify cron job is installed:
 #    crontab -l

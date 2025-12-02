@@ -25,6 +25,9 @@ cd github-summary
 ### 2. Configure Environment Variables
 
 ```bash
+# GitHub token (required) - Get with: gh auth token
+export GITHUB_TOKEN="your-github-token"
+
 # Anthropic API key (required; found on https://openai-proxy.shopify.io/dashboard/access)
 export OPENAI_API_KEY="your-shopify-ai-proxy-token"
 
