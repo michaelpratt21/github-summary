@@ -81,6 +81,15 @@ Check your inbox for a beautifully formatted HTML email!
   --file team-report.md
 ```
 
+### Personal Dashboard (PRs awaiting review + activity on your PRs)
+```bash
+./run.sh --repos "shop/world" \
+  --github-username "your-github-username" \
+  --labels "Slice: your-team" \
+  --time-range 24h \
+  --email you@example.com
+```
+
 ### Use a Config File
 ```bash
 # Copy example config

@@ -95,6 +95,7 @@ class GitHubSummary:
         self.labels = config.get('labels', [])
         self.usernames = config.get('usernames', [])
         self.time_range = config.get('time_range', '24h')
+        self.github_username = config.get('github_username', '')
 
         # Validate labels are strings (common YAML config error)
         if self.labels and any(not isinstance(label, str) for label in self.labels):
@@ -126,7 +127,7 @@ class GitHubSummary:
 
     def run(self) -> None:
         """Main entry point - generate and post summary."""
-        logger.info("Starting team changes summary generation")
+        logger.info("Starting GitHub summary generation")
 
         # Calculate time range
         start_time = self._parse_time_range(self.time_range)
@@ -134,46 +135,62 @@ class GitHubSummary:
 
         logger.info(f"Fetching PRs from {start_time} to {end_time}")
 
-        # Fetch PRs for each repo
+        # Fetch PRs awaiting review (uses repos config, ignores label/username filters)
+        prs_awaiting_review = []
+        if self.github_username:
+            logger.info(f"Fetching PRs awaiting review for {self.github_username}")
+            prs_awaiting_review = self._fetch_prs_awaiting_review()
+            logger.info(f"Found {len(prs_awaiting_review)} PRs awaiting review")
+
+        # Fetch comments on user's PRs (uses repos and time_range config, ignores label/username filters)
+        comments_on_my_prs = []
+        if self.github_username:
+            logger.info(f"Fetching comments on PRs authored by {self.github_username}")
+            comments_on_my_prs = self._fetch_comments_on_my_prs(start_time)
+            logger.info(f"Found {len(comments_on_my_prs)} comments on your PRs")
+
+        # Fetch merged PRs for each repo (uses all filters)
         all_prs = []
         for repo in self.repos:
             prs = self._fetch_merged_prs(repo, start_time)
             filtered_prs = self._filter_prs(prs)
             all_prs.extend(filtered_prs)
 
-        if not all_prs:
-            logger.info("No matching PRs found")
-            report = self._format_empty_report(start_time, end_time)
-            self._output_report(report)
-            return
-
-        logger.info(f"Found {len(all_prs)} matching PRs")
-
         # Generate summary for each PR
         summaries = []
-        for pr in all_prs:
-            logger.info(f"Analyzing PR #{pr['number']} in {pr['repository']}")
-            try:
-                summary = self._generate_pr_summary(pr)
-                summaries.append(summary)
-            except Exception as e:
-                logger.error(f"Failed to generate summary for PR #{pr.get('number', 'unknown')}: {e}")
-                logger.error(f"Traceback: {traceback.format_exc()}")
-                logger.info("Continuing with next PR...")
-                continue
+        if all_prs:
+            logger.info(f"Found {len(all_prs)} matching merged PRs")
+            for pr in all_prs:
+                logger.info(f"Analyzing PR #{pr['number']} in {pr['repository']}")
+                try:
+                    summary = self._generate_pr_summary(pr)
+                    summaries.append(summary)
+                except Exception as e:
+                    logger.error(f"Failed to generate summary for PR #{pr.get('number', 'unknown')}: {e}")
+                    logger.error(f"Traceback: {traceback.format_exc()}")
+                    logger.info("Continuing with next PR...")
+                    continue
+        else:
+            logger.info("No matching merged PRs found")
 
-        # Check if we got any summaries
-        if not summaries:
-            logger.warning("No PR summaries were generated successfully")
+        # Check if there's anything to report
+        if not summaries and not prs_awaiting_review and not comments_on_my_prs:
+            logger.info("Nothing to report")
             report = self._format_empty_report(start_time, end_time)
             self._output_report(report)
             return
 
         # Format and output report
-        report = self._format_report(summaries, start_time, end_time)
+        report = self._format_report(
+            summaries,
+            start_time,
+            end_time,
+            prs_awaiting_review=prs_awaiting_review,
+            comments_on_my_prs=comments_on_my_prs,
+        )
         self._output_report(report)
 
-        failed_count = len(all_prs) - len(summaries)
+        failed_count = len(all_prs) - len(summaries) if all_prs else 0
         if failed_count > 0:
             logger.warning(f"Summary generation complete. {len(summaries)} successful, {failed_count} failed")
         else:
@@ -263,6 +280,126 @@ class GitHubSummary:
                 current_date += timedelta(days=1)
 
             return all_prs
+
+    def _fetch_prs_awaiting_review(self) -> List[Dict[str, Any]]:
+        """Fetch open PRs where the current user is requested as a reviewer."""
+        if not self.github_username:
+            logger.info("No github_username configured, skipping PRs awaiting review")
+            return []
+
+        all_prs = []
+        for repo in self.repos:
+            cmd = [
+                'gh', 'pr', 'list',
+                '--repo', repo,
+                '--state', 'open',
+                '--search', f'user-review-requested:{self.github_username}',
+                '--json', 'number,title,url,author,labels,createdAt,updatedAt',
+                '--limit', '100'
+            ]
+
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                prs = json.loads(result.stdout)
+
+                for pr in prs:
+                    pr['repository'] = repo
+                    all_prs.append(pr)
+
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to fetch PRs awaiting review from {repo}: {e.stderr}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse PR data from {repo}: {e}")
+
+        return all_prs
+
+    def _fetch_comments_on_my_prs(self, since: datetime) -> List[Dict[str, Any]]:
+        """Fetch recent comments on PRs authored by the current user."""
+        if not self.github_username:
+            logger.info("No github_username configured, skipping comments on my PRs")
+            return []
+
+        since_str = since.strftime('%Y-%m-%dT%H:%M:%SZ')
+        all_comments = []
+
+        for repo in self.repos:
+            # Fetch open and recently merged PRs authored by the user
+            for state in ['open', 'merged']:
+                cmd = [
+                    'gh', 'pr', 'list',
+                    '--repo', repo,
+                    '--state', state,
+                    '--author', self.github_username,
+                    '--json', 'number,title,url,comments,reviews',
+                    '--limit', '50'
+                ]
+
+                try:
+                    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                    prs = json.loads(result.stdout)
+
+                    for pr in prs:
+                        pr_info = {
+                            'number': pr['number'],
+                            'title': pr['title'],
+                            'url': pr['url'],
+                            'repository': repo,
+                        }
+
+                        # Get comments from the comments array
+                        comments = pr.get('comments') or []
+                        for comment in comments:
+                            created_at = comment.get('createdAt', '')
+                            if created_at >= since_str:
+                                author = comment.get('author')
+                                author_login = author.get('login', 'unknown') if author else 'unknown'
+                                # Skip bots and self-comments
+                                if author_login in KNOWN_BOTS or author_login.endswith('[bot]'):
+                                    continue
+                                if author_login == self.github_username:
+                                    continue
+
+                                all_comments.append({
+                                    'pr': pr_info,
+                                    'author': author_login,
+                                    'body': comment.get('body', '')[:300],  # Truncate long comments
+                                    'created_at': created_at,
+                                    'type': 'comment',
+                                })
+
+                        # Get comments from reviews
+                        reviews = pr.get('reviews') or []
+                        for review in reviews:
+                            submitted_at = review.get('submittedAt', '')
+                            if submitted_at >= since_str:
+                                author = review.get('author')
+                                author_login = author.get('login', 'unknown') if author else 'unknown'
+                                # Skip bots and self-reviews
+                                if author_login in KNOWN_BOTS or author_login.endswith('[bot]'):
+                                    continue
+                                if author_login == self.github_username:
+                                    continue
+
+                                body = review.get('body', '')
+                                state = review.get('state', '')
+                                if body or state in ['APPROVED', 'CHANGES_REQUESTED']:
+                                    all_comments.append({
+                                        'pr': pr_info,
+                                        'author': author_login,
+                                        'body': body[:300] if body else f'[{state}]',
+                                        'created_at': submitted_at,
+                                        'type': 'review',
+                                        'state': state,
+                                    })
+
+                except subprocess.CalledProcessError as e:
+                    logger.error(f"Failed to fetch comments from {repo}: {e.stderr}")
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse comment data from {repo}: {e}")
+
+        # Sort by created_at descending
+        all_comments.sort(key=lambda x: x['created_at'], reverse=True)
+        return all_comments
 
     def _filter_prs(self, prs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Filter PRs by labels and usernames."""
@@ -481,8 +618,18 @@ Format your response as:
 If no related resources found, write "None found in PR description"
 """
 
-    def _format_report(self, summaries: List[Dict[str, Any]], start_time: datetime, end_time: datetime) -> str:
+    def _format_report(
+        self,
+        summaries: List[Dict[str, Any]],
+        start_time: datetime,
+        end_time: datetime,
+        prs_awaiting_review: Optional[List[Dict[str, Any]]] = None,
+        comments_on_my_prs: Optional[List[Dict[str, Any]]] = None,
+    ) -> str:
         """Format all summaries into final report."""
+        prs_awaiting_review = prs_awaiting_review or []
+        comments_on_my_prs = comments_on_my_prs or []
+
         # Format repositories with links
         repo_links = [f"[{repo}](https://github.com/{repo})" for repo in self.repos]
         repos_line = f"**Repositories:** {', '.join(repo_links)}"
@@ -497,33 +644,108 @@ If no related resources found, write "None found in PR description"
 
         report = f"""# GitHub Summary
 
-**Total PRs:** {len(summaries)}
-
 **Report Period:** {start_time.strftime('%Y-%m-%d %H:%M UTC')} to {end_time.strftime('%Y-%m-%d %H:%M UTC')}
 
 {repos_line}
+
+"""
+
+        # Add PRs awaiting review section (before main content)
+        if prs_awaiting_review:
+            report += self._format_prs_awaiting_review_section(prs_awaiting_review)
+            report += "\n---\n\n"
+
+        # Add comments on my PRs section
+        if comments_on_my_prs:
+            report += self._format_comments_on_my_prs_section(comments_on_my_prs)
+            report += "\n---\n\n"
+
+        # Add merged PRs section header if there are summaries
+        if summaries:
+            report += f"""## Merged PRs ({len(summaries)} total)
 
 **Filters:** Labels: {labels_text} | Usernames: {usernames_text}
 
 ---
 """
+            for summary in summaries:
+                report += self._format_pr_section(summary)
+                report += "\n---\n\n"
 
-        for summary in summaries:
-            report += self._format_pr_section(summary)
-            report += "\n---\n\n"
+            # Add statistics
+            total_authors = len(set(s['author']['login'] for s in summaries))
+            total_files = sum(len(s['files']) for s in summaries)
 
-        # Add statistics
-        total_authors = len(set(s['author']['login'] for s in summaries))
-        total_files = sum(len(s['files']) for s in summaries)
+            report += f"""## Summary Statistics
 
-        report += f"""## Summary Statistics
-
-- **Total PRs:** {len(summaries)}
+- **Total Merged PRs:** {len(summaries)}
 - **Authors:** {total_authors} unique contributors
 - **Files Changed:** {total_files} files across all PRs
 """
+        elif not prs_awaiting_review and not comments_on_my_prs:
+            report += f"""**Filters:** Labels: {labels_text} | Usernames: {usernames_text}
+
+---
+
+No merged pull requests found matching the specified criteria.
+"""
 
         return report
+
+    def _format_prs_awaiting_review_section(self, prs: List[Dict[str, Any]]) -> str:
+        """Format the PRs awaiting review section."""
+        section = f"""## PRs Awaiting Your Review ({len(prs)})
+
+"""
+        for pr in prs:
+            author = pr.get('author')
+            author_login = author.get('login', 'unknown') if author else 'unknown'
+            created_at = pr.get('createdAt', '')
+            created_date = created_at[:10] if created_at else 'Unknown'
+
+            section += f"- [PR #{pr['number']}: {pr['title']}]({pr['url']}) by **{author_login}** ({created_date})\n"
+
+        return section
+
+    def _format_comments_on_my_prs_section(self, comments: List[Dict[str, Any]]) -> str:
+        """Format the comments on my PRs section."""
+        section = f"""## Recent Activity on Your PRs ({len(comments)})
+
+"""
+        for comment in comments:
+            pr_info = comment['pr']
+            author = comment['author']
+            created_at = comment['created_at']
+            created_date = created_at[:10] if created_at else 'Unknown'
+            created_time = created_at[11:16] if created_at and len(created_at) > 16 else ''
+            comment_type = comment.get('type', 'comment')
+            state = comment.get('state', '')
+
+            # Format the type indicator
+            if comment_type == 'review' and state:
+                if state == 'APPROVED':
+                    type_indicator = '✅ Approved'
+                elif state == 'CHANGES_REQUESTED':
+                    type_indicator = '🔄 Changes Requested'
+                else:
+                    type_indicator = f'📝 Review ({state})'
+            else:
+                type_indicator = '💬 Comment'
+
+            body = comment.get('body', '')
+            # Truncate body for display
+            if body and len(body) > 150:
+                body = body[:150] + '...'
+
+            section += f"- **{type_indicator}** on [PR #{pr_info['number']}: {pr_info['title']}]({pr_info['url']})\n"
+            section += f"  - By **{author}** at {created_date} {created_time} UTC\n"
+            if body and body != f'[{state}]':
+                # Escape newlines in the body for markdown display
+                body_oneline = body.replace('\n', ' ').replace('\r', '')
+                section += f"  - \"{body_oneline}\"\n"
+            section += "\n"
+
+        return section
 
     def _format_pr_section(self, summary: Dict[str, Any]) -> str:
         """Format a single PR summary."""
@@ -1217,6 +1439,7 @@ def main():
     parser.add_argument('--labels', help='Comma-separated list of labels to filter')
     parser.add_argument('--usernames', help='Comma-separated list of usernames to filter')
     parser.add_argument('--time-range', help='Time range (e.g., 24h, 7d)')
+    parser.add_argument('--github-username', help='Your GitHub username (for PRs awaiting review and comments on your PRs)')
     parser.add_argument('--slack', action='append', help='Slack webhook URL (can be specified multiple times)')
     parser.add_argument('--email', action='append', help='Email address to send summary (can be specified multiple times)')
     parser.add_argument('--file', action='append', help='Output file path (can be specified multiple times)')
@@ -1238,6 +1461,8 @@ def main():
         config['usernames'] = [u.strip() for u in args.usernames.split(',')]
     if args.time_range:
         config['time_range'] = args.time_range
+    if args.github_username:
+        config['github_username'] = args.github_username
     if args.slack:
         config['slack_urls'] = args.slack
     if args.email:

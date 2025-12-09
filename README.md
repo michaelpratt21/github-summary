@@ -6,6 +6,7 @@ AI-powered tool that generates human-readable summaries of merged GitHub PRs usi
 
 - 🤖 **AI-Powered Summaries**: Uses Claude to generate concise, context-aware summaries of each PR
 - 📊 **Flexible Filtering**: Filter by labels, usernames, repositories, and time ranges
+- 👤 **Personal Dashboard**: Track PRs awaiting your review and comments on your PRs
 - 📧 **Multiple Output Options**: Send via email (HTML formatted), Slack, or save to files
 - ⚡ **High-Volume Support**: Handles repositories with 700+ PRs/day
 - ⏰ **Automation Ready**: Easy to schedule with cron jobs
@@ -50,6 +51,7 @@ Options:
   --repos REPOS              Comma-separated list of repositories (owner/repo)
   --labels LABELS            Comma-separated list of GitHub labels to filter
   --usernames USERNAMES      Comma-separated list of GitHub usernames to filter
+  --github-username USER     Your GitHub username (for PRs awaiting review & activity on your PRs)
   --time-range RANGE         Time range to look back (e.g., 24h, 7d)
   --email EMAIL              Email address to send summary (can be repeated)
   --slack URL                Slack webhook URL (can be repeated)
@@ -102,6 +104,15 @@ Then run:
   --file contributors-report.md
 ```
 
+**Personal dashboard (PRs awaiting your review + activity on your PRs):**
+```bash
+./run.sh --repos "org/repo" \
+  --github-username "your-username" \
+  --labels "Slice: your-team" \
+  --time-range 24h \
+  --email you@example.com
+```
+
 ## Automation with Cron
 
 Schedule automated daily reports:
@@ -119,6 +130,25 @@ crontab -e
 ```
 
 See [examples/crontab.example](examples/crontab.example) for complete cron setup.
+
+## Report Sections
+
+When you configure `github_username`, your report will include these additional sections:
+
+### PRs Awaiting Your Review
+Lists open PRs where you are **directly** requested as a reviewer (not via team membership). Helps you stay on top of your review queue.
+
+### Recent Activity on Your PRs
+Shows comments and reviews from others on PRs you authored within the time range. Includes:
+- 💬 Regular comments
+- ✅ Approvals
+- 🔄 Changes requested
+- 📝 Review comments
+
+Note: Bot comments are automatically filtered out.
+
+### Merged PRs
+The main section showing AI-generated summaries of merged PRs matching your label/username filters.
 
 ## Output Formats
 
