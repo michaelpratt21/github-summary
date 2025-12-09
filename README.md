@@ -123,10 +123,10 @@ crontab -e
 
 # Add entries (see examples/crontab.example for full setup)
 # Monday at 6am - 72h report (covers weekend)
-0 6 * * 1 cd /path/to/github-summary && ./run.sh --config github_summary_config.yaml
+0 6 * * 1 cd /path/to/github-summary && ./cron_wrapper.sh --config github_summary_config_3d.yaml
 
 # Tuesday-Friday at 6am - 24h report
-0 6 * * 2-5 cd /path/to/github-summary && ./run.sh --config github_summary_config.yaml
+0 6 * * 2-5 cd /path/to/github-summary && ./cron_wrapper.sh --config github_summary_config.yaml
 ```
 
 See [examples/crontab.example](examples/crontab.example) for complete cron setup.
@@ -195,9 +195,11 @@ github-summary/
 - Python 3.8+
 - GitHub CLI (`gh`) installed and authenticated
 - Anthropic API access (via Shopify proxy or direct)
-- SMTP credentials (if using email)
+- SMTP credentials (if using email output)
 
 ### Installing GitHub CLI
+
+Should already be installed if you use `dev` but if not:
 
 ```bash
 # macOS
