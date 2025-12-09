@@ -708,41 +708,58 @@ No merged pull requests found matching the specified criteria.
         return section
 
     def _format_comments_on_my_prs_section(self, comments: List[Dict[str, Any]]) -> str:
-        """Format the comments on my PRs section."""
-        section = f"""## Recent Activity on Your PRs ({len(comments)})
+        """Format the comments on my PRs section, grouped by PR."""
+        # Group comments by PR
+        from collections import OrderedDict
+        prs_with_comments: OrderedDict = OrderedDict()
 
-"""
         for comment in comments:
             pr_info = comment['pr']
-            author = comment['author']
-            created_at = comment['created_at']
-            created_date = created_at[:10] if created_at else 'Unknown'
-            created_time = created_at[11:16] if created_at and len(created_at) > 16 else ''
-            comment_type = comment.get('type', 'comment')
-            state = comment.get('state', '')
+            pr_key = (pr_info['number'], pr_info['title'], pr_info['url'])
+            if pr_key not in prs_with_comments:
+                prs_with_comments[pr_key] = []
+            prs_with_comments[pr_key].append(comment)
 
-            # Format the type indicator
-            if comment_type == 'review' and state:
-                if state == 'APPROVED':
-                    type_indicator = '✅ Approved'
-                elif state == 'CHANGES_REQUESTED':
-                    type_indicator = '🔄 Changes Requested'
+        # Count total activity items
+        total_activity = len(comments)
+        num_prs = len(prs_with_comments)
+
+        section = f"""## Recent Activity on Your PRs ({total_activity} items across {num_prs} PRs)
+
+"""
+        for (pr_number, pr_title, pr_url), pr_comments in prs_with_comments.items():
+            section += f"### [PR #{pr_number}: {pr_title}]({pr_url})\n\n"
+
+            for comment in pr_comments:
+                author = comment['author']
+                created_at = comment['created_at']
+                created_date = created_at[:10] if created_at else 'Unknown'
+                created_time = created_at[11:16] if created_at and len(created_at) > 16 else ''
+                comment_type = comment.get('type', 'comment')
+                state = comment.get('state', '')
+
+                # Format the type indicator
+                if comment_type == 'review' and state:
+                    if state == 'APPROVED':
+                        type_indicator = '✅ Approved'
+                    elif state == 'CHANGES_REQUESTED':
+                        type_indicator = '🔄 Changes Requested'
+                    else:
+                        type_indicator = f'📝 Review ({state})'
                 else:
-                    type_indicator = f'📝 Review ({state})'
-            else:
-                type_indicator = '💬 Comment'
+                    type_indicator = '💬 Comment'
 
-            body = comment.get('body', '')
-            # Truncate body for display
-            if body and len(body) > 150:
-                body = body[:150] + '...'
+                body = comment.get('body', '')
+                # Truncate body for display
+                if body and len(body) > 150:
+                    body = body[:150] + '...'
 
-            section += f"- **{type_indicator}** on [PR #{pr_info['number']}: {pr_info['title']}]({pr_info['url']})\n"
-            section += f"  - By **{author}** at {created_date} {created_time} UTC\n"
-            if body and body != f'[{state}]':
-                # Escape newlines in the body for markdown display
-                body_oneline = body.replace('\n', ' ').replace('\r', '')
-                section += f"  - \"{body_oneline}\"\n"
+                section += f"- **{type_indicator}** by **{author}** ({created_date} {created_time} UTC)\n"
+                if body and body != f'[{state}]':
+                    # Escape newlines in the body for markdown display
+                    body_oneline = body.replace('\n', ' ').replace('\r', '')
+                    section += f"  > {body_oneline}\n"
+
             section += "\n"
 
         return section
@@ -1099,6 +1116,7 @@ No merged pull requests found matching the specified criteria.
         in_summary = False
         in_files = False
         in_stats = False
+        in_metadata = False
 
         for line in lines:
             # Main title
@@ -1150,12 +1168,15 @@ No merged pull requests found matching the specified criteria.
             # Metadata (bold fields)
             elif line.startswith('**') and ':' in line and not in_summary:
                 if not any(x in line for x in ['Summary', 'Related', 'Changed']):
-                    # Start metadata section if needed
-                    if 'Total PRs:' in line or 'Report Period:' in line:
+                    # Start metadata section if needed (only for Report Period at top)
+                    if 'Report Period:' in line:
                         if in_stats:
                             html_parts.append('</div>')
                             in_stats = False
+                        if in_metadata:
+                            html_parts.append('</div>')
                         html_parts.append('<div class="metadata">')
+                        in_metadata = True
 
                     # Parse bold text
                     match = re.match(r'\*\*(.*?):\*\*(.*)', line)
@@ -1180,9 +1201,10 @@ No merged pull requests found matching the specified criteria.
 
                         html_parts.append(f'<p><strong>{key}:</strong> {value}</p>')
 
-                    # Close metadata after Filters
-                    if 'Filters:' in line:
+                    # Close metadata after Repositories (end of report header section)
+                    if 'Repositories:' in line and in_metadata:
                         html_parts.append('</div>')
+                        in_metadata = False
 
             # Horizontal rules
             elif line.strip() == '---':
@@ -1220,6 +1242,8 @@ No merged pull requests found matching the specified criteria.
         if in_files:
             html_parts.append('</div>')
         if in_stats:
+            html_parts.append('</div>')
+        if in_metadata:
             html_parts.append('</div>')
 
         html_parts.append('</body></html>')
