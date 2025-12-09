@@ -13,7 +13,7 @@ AI-powered tool that generates human-readable summaries of merged GitHub PRs usi
 
 ## Quick Start
 
-### 1. Clone and Setup
+### 1. Clone and Setup (one-time)
 
 ```bash
 git clone https://github.com/michaelpratt21/github-summary
@@ -38,7 +38,7 @@ export SMTP_PASSWORD="your-app-password"
 export SMTP_FROM="your.email@company.com"
 ```
 
-See [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md) for detailed email setup instructions.
+See [docs/EMAIL_SETUP.md](docs/EMAIL_SETUP.md) for detailed email setup instructions if you plan to get email summaries.
 
 ### 3. Usage
 
@@ -133,7 +133,7 @@ See [examples/crontab.example](examples/crontab.example) for complete cron setup
 
 ## Report Sections
 
-When you configure `github_username`, your report will include these additional sections:
+When you include the `github_username` option, your report will include these additional sections:
 
 ### PRs Awaiting Your Review
 Lists open PRs where you are **directly** requested as a reviewer (not via team membership). Helps you stay on top of your review queue.
@@ -147,8 +147,12 @@ Shows comments and reviews from others on PRs you authored within the time range
 
 Note: Bot comments are automatically filtered out.
 
-### Merged PRs
+![Recent Activity Screenshot](docs/images/github-summary-recent-activity.jpg)
+
+### Merged PRs Summary
 The main section showing AI-generated summaries of merged PRs matching your label/username filters.
+
+![PR Summary Screenshot](docs/images/github-summary-pr-summary.jpg)
 
 ## Output Formats
 
