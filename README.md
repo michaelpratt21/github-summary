@@ -115,21 +115,30 @@ Then run:
 
 ## Automation with Cron
 
-Schedule automated daily reports:
+Schedule automated daily reports by adding entries to your crontab. Define environment variables once at the top:
 
 ```bash
 # Edit crontab
 crontab -e
 
-# Add entries (see examples/crontab.example for full setup)
+# Shell and PATH (required for gh command)
+SHELL=/bin/bash
+PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin
+
+# Environment variables (defined once, apply to all jobs)
+OPENAI_API_KEY="your-api-key"
+SMTP_USER="you@company.com"
+SMTP_PASSWORD="your-app-password"
+SMTP_FROM="you@company.com"
+
 # Monday at 6am - 72h report (covers weekend)
-0 6 * * 1 cd /path/to/github-summary && ./cron_wrapper.sh --config github_summary_config_3d.yaml
+0 6 * * 1 /path/to/github-summary/run.sh --config /path/to/github-summary/github_summary_config_3d.yaml
 
 # Tuesday-Friday at 6am - 24h report
-0 6 * * 2-5 cd /path/to/github-summary && ./cron_wrapper.sh --config github_summary_config.yaml
+0 6 * * 2-5 /path/to/github-summary/run.sh --config /path/to/github-summary/github_summary_config.yaml
 ```
 
-See [examples/crontab.example](examples/crontab.example) for complete cron setup.
+See [examples/crontab.example](examples/crontab.example) for a complete example.
 
 ## Report Sections
 

@@ -10,46 +10,47 @@
 # 3. Copy the relevant sections into your crontab
 # 4. Verify with: crontab -l
 
-# ============================================================================
-# ENVIRONMENT VARIABLES
-# ============================================================================
-# IMPORTANT: Instead of setting environment variables here, add them to your
-# ~/.zshrc file (or ~/.bashrc if using bash). The cron_wrapper.sh script will
-# automatically source your shell profile to pick up all environment variables.
-#
-# Add to your ~/.zshrc:
-#   export GITHUB_TOKEN="your-github-token-here"  # Get with: gh auth token
-#   export OPENAI_API_KEY="shopify-your-api-key-here"
-#   export SMTP_USER="your.email@company.com"
-#   export SMTP_PASSWORD="your-app-password-here"
-#   export SMTP_FROM="your.email@company.com"
-
 SHELL=/bin/bash
+PATH=/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin
+
+# ============================================================================
+# ENVIRONMENT VARIABLES (defined once, apply to all jobs below)
+# ============================================================================
+OPENAI_API_KEY="your-api-key"
+SMTP_USER="you@company.com"
+SMTP_PASSWORD="your-app-password"
+SMTP_FROM="you@company.com"
 
 # ============================================================================
 # SCHEDULED JOBS
 # ============================================================================
 
 # Monday at 6am - 72 hour report (covers weekend)
-0 6 * * 1 /Users/michaelpratt/github/github-summary/cron_wrapper.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 72h --email your.email@company.com >> /tmp/github_summary_monday.log 2>&1
+0 6 * * 1 /path/to/github-summary/run.sh --config /path/to/github-summary/github_summary_config_3d.yaml >> /tmp/github_summary_monday.log 2>&1
 
 # Tuesday-Friday at 6am - 24 hour report
-0 6 * * 2-5 /Users/michaelpratt/github/github-summary/cron_wrapper.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment,Slice: fulfillments,Slice: order-routing,Slice: delivery-strategies" --time-range 24h --email your.email@company.com >> /tmp/github_summary_daily.log 2>&1
+0 6 * * 2-5 /path/to/github-summary/run.sh --config /path/to/github-summary/github_summary_config.yaml >> /tmp/github_summary_daily.log 2>&1
 
 # ============================================================================
-# ALTERNATIVE: Using a config file
+# ALTERNATIVE: Using command-line arguments instead of config file
 # ============================================================================
-# If you prefer to use a config file instead of command-line arguments:
+
+# Monday at 6am - 72 hour report with inline options
+# 0 6 * * 1 /path/to/github-summary/run.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment" --time-range 72h --email you@company.com >> /tmp/github_summary_monday.log 2>&1
+
+# Tuesday-Friday at 6am - 24 hour report with inline options
+# 0 6 * * 2-5 /path/to/github-summary/run.sh --repos "shop/world" --labels "Slice: delivery,Slice: fulfillment" --time-range 24h --email you@company.com >> /tmp/github_summary_daily.log 2>&1
+
+# ============================================================================
+# REQUIRED ENVIRONMENT VARIABLES
+# ============================================================================
+# OPENAI_API_KEY  - Your Anthropic API key (or Shopify AI proxy token)
+# SMTP_USER       - Email address for SMTP authentication
+# SMTP_PASSWORD   - App password for SMTP (see docs/EMAIL_SETUP.md)
+# SMTP_FROM       - Sender email address (usually same as SMTP_USER)
 #
-# 1. Create github_summary_config.yaml in the repo directory
-# 2. Set time_range: 24h or 72h as needed
-# 3. Use these cron entries instead:
-
-# Monday at 6am - edit config to use 72h
-# 0 6 * * 1 /Users/michaelpratt/github/github-summary/cron_wrapper.sh --config github_summary_config_monday.yaml >> /tmp/github_summary_monday.log 2>&1
-
-# Tuesday-Friday at 6am - edit config to use 24h
-# 0 6 * * 2-5 /Users/michaelpratt/github/github-summary/cron_wrapper.sh --config github_summary_config_daily.yaml >> /tmp/github_summary_daily.log 2>&1
+# Optional:
+# GITHUB_TOKEN    - Only needed if gh CLI isn't authenticated
 
 # ============================================================================
 # CRON SCHEDULE FORMAT
@@ -77,8 +78,8 @@ SHELL=/bin/bash
 #    tail -f /tmp/github_summary_daily.log
 #    tail -f /tmp/github_summary_monday.log
 #
-# 2. Test command manually first:
-#    /Users/michaelpratt/github/github-summary/cron_wrapper.sh --repos "shop/world" --time-range 24h --email test@example.com
+# 2. Test command manually first (replace with your actual values):
+#    OPENAI_API_KEY="key" SMTP_USER="you@co.com" SMTP_PASSWORD="pass" SMTP_FROM="you@co.com" /path/to/run.sh --config /path/to/config.yaml
 #
 # 3. Verify cron job is installed:
 #    crontab -l
@@ -91,6 +92,6 @@ SHELL=/bin/bash
 #
 # 6. Email not arriving:
 #    - Check spam folder
-#    - Verify SMTP credentials in environment variables
+#    - Verify SMTP credentials
 #    - Check error logs
 #    - See docs/EMAIL_SETUP.md for detailed troubleshooting
