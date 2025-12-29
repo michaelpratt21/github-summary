@@ -140,6 +140,11 @@ SMTP_FROM="you@company.com"
 
 See [examples/crontab.example](examples/crontab.example) for a complete example.
 
+⚠️ If your macbook is asleep at the scheduled cron job time, the job will be skipped. You have 2 options to help:
+
+1. Use `launchd` instead of cron, as it will run any missed jobs as soon as the macbook wakes up from user input.
+2. Use the following command to force the laptop to wakeup every day right before the cron job: `sudo pmset repeat wakeorpoweron MTWRFSU 05:55:00`
+
 ## Report Sections
 
 When you include the `github_username` option, your report will include these additional sections:
