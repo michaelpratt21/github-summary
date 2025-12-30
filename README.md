@@ -140,10 +140,51 @@ SMTP_FROM="you@company.com"
 
 See [examples/crontab.example](examples/crontab.example) for a complete example.
 
-⚠️ If your macbook is asleep at the scheduled cron job time, the job will be skipped. You have 2 options to help:
+## Automation with launchd (macOS)
 
-1. Use `launchd` instead of cron, as it will run any missed jobs as soon as the macbook wakes up from user input.
-2. Use the following command to force the laptop to wakeup every day right before the cron job: `sudo pmset repeat wakeorpoweron MTWRFSU 05:55:00`
+On macOS, `launchd` is preferred over cron because it will **run missed jobs when your laptop wakes from sleep**. Cron jobs are simply skipped if the computer is asleep at the scheduled time.
+
+### Quick Setup
+
+1. **Copy the example plist to LaunchAgents:**
+   ```bash
+   cp examples/com.github-summary.daily.plist ~/Library/LaunchAgents/
+   ```
+
+2. **Edit the plist with your credentials:**
+   ```bash
+   open ~/Library/LaunchAgents/com.github-summary.daily.plist
+   ```
+
+   Update the `EnvironmentVariables` section with your actual API keys and SMTP credentials.
+
+3. **Load the job:**
+   ```bash
+   launchctl load ~/Library/LaunchAgents/com.github-summary.daily.plist
+   ```
+
+The included `launchd_wrapper.sh` automatically uses 72h time range on Mondays (to cover the weekend) and 24h on other days.
+
+### Useful Commands
+
+```bash
+# Test run immediately
+launchctl start com.github-summary.daily
+
+# Check if job is loaded
+launchctl list | grep github-summary
+
+# View logs
+tail -f /tmp/github_summary.log
+
+# Reload after editing the plist
+launchctl unload ~/Library/LaunchAgents/com.github-summary.daily.plist
+launchctl load ~/Library/LaunchAgents/com.github-summary.daily.plist
+
+# Remove the job
+launchctl unload ~/Library/LaunchAgents/com.github-summary.daily.plist
+rm ~/Library/LaunchAgents/com.github-summary.daily.plist
+```
 
 ## Report Sections
 
@@ -195,13 +236,16 @@ github-summary/
 ├── QUICKSTART.md                    # 5-minute quick start guide
 ├── setup.sh                         # Setup script (creates venv, installs deps)
 ├── run.sh                           # Run script (activates venv automatically)
+├── launchd_wrapper.sh               # Wrapper for launchd (handles Mon vs weekday)
+├── cron_wrapper.sh                  # Wrapper for cron (loads env vars)
 ├── requirements.txt                 # Python dependencies
 ├── github_summary.py                # Main script
 ├── github_summary_config.yaml.example # Example configuration
 ├── docs/
 │   └── EMAIL_SETUP.md              # Email setup guide
 └── examples/
-    └── crontab.example             # Cron job examples
+    ├── crontab.example             # Cron job examples
+    └── com.github-summary.daily.plist # launchd plist template
 ```
 
 ## Requirements

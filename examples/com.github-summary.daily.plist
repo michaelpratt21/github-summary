@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Unique identifier for this job -->
+    <key>Label</key>
+    <string>com.github-summary.daily</string>
+
+    <!-- Working directory -->
+    <key>WorkingDirectory</key>
+    <string>/Users/michaelpratt/github/github-summary</string>
+
+    <!-- Command to run -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/michaelpratt/github/github-summary/launchd_wrapper.sh</string>
+    </array>
+
+    <!-- Schedule: Run at 6am every day -->
+    <!-- launchd will run missed jobs when computer wakes from sleep -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>6</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <!-- Environment variables -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+        <key>OPENAI_API_KEY</key>
+        <string>your-api-key-here</string>
+        <key>SMTP_USER</key>
+        <string>you@company.com</string>
+        <key>SMTP_PASSWORD</key>
+        <string>your-app-password</string>
+        <key>SMTP_FROM</key>
+        <string>you@company.com</string>
+    </dict>
+
+    <!-- Log output -->
+    <key>StandardOutPath</key>
+    <string>/tmp/github_summary.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/github_summary.log</string>
+
+</dict>
+</plist>
